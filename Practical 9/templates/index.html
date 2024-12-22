@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fractional Knapsack</title>
+</head>
+<body>
+    <h1>Fractional Knapsack Problem</h1>
+    
+    <form method="POST">
+        <label for="profits">Profits (comma-separated):</label>
+        <input type="text" id="profits" name="profits" required>
+        
+        <label for="weights">Weights (comma-separated):</label>
+        <input type="text" id="weights" name="weights" required>
+        
+        <label for="capacity">Capacity:</label>
+        <input type="number" id="capacity" name="capacity" required>
+        
+        <button type="submit">Calculate</button>
+    </form>
+    
+    {% if items_with_fractions %}
+        <h2>Results</h2>
+        <table border="1">
+            <tr>
+                <th>Profit</th>
+                <th>Weight</th>
+                <th>Ratio</th>
+                <th>Fraction Taken</th>
+            </tr>
+            {% for item, fraction in items_with_fractions %}
+            <tr>
+                <td>{{ item[0] }}</td>
+                <td>{{ item[1] }}</td>
+                <td>{{ item[2] | round(2) }}</td>
+                <td>{{ fraction | round(2) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <p><strong>Total Profit:</strong> {{ total_profit }}</p>
+    {% endif %}
+</body>
+</html>

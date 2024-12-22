@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knapsack Optimization</title>
+    <style>
+        table {
+            width: 60%;
+            margin: 20px auto;
+            border: 1px solid #333;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+        .header {
+            text-align: center;
+        }
+        .highlight {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2 class="header">Knapsack Dynamic Programming Table</h2>
+    <table>
+        <thead>
+            <tr>
+                <th></th>
+                {% for weight in range(capacity + 1) %}
+                    <th>W = {{ weight }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in range(item_count + 1) %}
+            <tr>
+                <td>Item {{ item }}</td>
+                {% for weight in range(capacity + 1) %}
+                    <td>{{ dp_table[item][weight] }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3 class="header">Maximum Profit: <span class="highlight">{{ max_value }}</span></h3>
+    
+    <h3 class="header">Selected Items (Indices):</h3>
+    <p class="header">{{ selected_items }}</p>
+</body>
+</html>
