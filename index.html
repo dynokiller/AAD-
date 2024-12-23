@@ -72,7 +72,7 @@
     <script>
         const GITHUB_API = "https://api.github.com/repos/dynokiller/AAD-/contents/";
 
-       async function fetchPracticals() {
+     async function fetchPracticals() {
     const listElement = document.getElementById("practical-list");
     listElement.innerHTML = "<p>Loading practicals...</p>";
 
@@ -97,26 +97,33 @@
             const folderResponse = await fetch(folder.url);
             const folderContents = await folderResponse.json();
 
-            // Create a card for the folder
-            const card = document.createElement("div");
-            card.className = "practical-card";
-            card.innerHTML = `
-                <h3>${folder.name}</h3>
-                <ul>
-                    ${folderContents
-                        .map(
-                            file => `
-                        <li>
-                            ${file.name} 
-                            <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View</a>
-                            <a class="button" href="${file.download_url}" target="_blank">Download</a>
-                        </li>
-                    `
-                        )
-                        .join("")}
-                </ul>
-            `;
-            listElement.appendChild(card);
+            // Filter for .py and .html files only
+            const filteredFiles = folderContents.filter(file => 
+                file.name.endsWith(".py") || file.name.endsWith(".html")
+            );
+
+            if (filteredFiles.length > 0) {
+                // Create a card for the folder
+                const card = document.createElement("div");
+                card.className = "practical-card";
+                card.innerHTML = `
+                    <h3>${folder.name}</h3>
+                    <ul>
+                        ${filteredFiles
+                            .map(
+                                file => `
+                            <li>
+                                ${file.name} 
+                                <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View</a>
+                                <a class="button" href="${file.download_url}" target="_blank">Download</a>
+                            </li>
+                        `
+                            )
+                            .join("")}
+                    </ul>
+                `;
+                listElement.appendChild(card);
+            }
         }
     } catch (error) {
         console.error("Error fetching practicals:", error);
