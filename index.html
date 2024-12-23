@@ -49,8 +49,21 @@
         .button:hover {
             background-color: #0056b3;
         }
-        #pdf-list, #practical-list {
+        #pdf-list, #practical-list, #main-options {
             display: none;
+        }
+        .back-button {
+            margin: 20px;
+            display: block;
+            padding: 10px 15px;
+            background-color: #dc3545;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .back-button:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
@@ -65,11 +78,13 @@
     </div>
 
     <div class="content" id="pdf-list">
+        <a href="#" class="back-button" onclick="goBack()">Back</a>
         <h2>PDF Downloads</h2>
         <ul id="pdf-list-content"></ul>
     </div>
 
     <div class="content" id="practical-list">
+        <a href="#" class="back-button" onclick="goBack()">Back</a>
         <h2>Practical Files</h2>
         <ul id="practical-list-content"></ul>
     </div>
@@ -93,16 +108,20 @@
             fetchPracticals();
         }
 
-        // Fetch PDF files from GitHub
+        // Go back to the main options screen
+        function goBack() {
+            document.getElementById('main-options').style.display = 'block';
+            document.getElementById('pdf-list').style.display = 'none';
+            document.getElementById('practical-list').style.display = 'none';
+        }
+
+        // Fetch PDF files from GitHub with recursive folder traversal
         async function fetchPDFs() {
             const pdfListContent = document.getElementById("pdf-list-content");
             pdfListContent.innerHTML = "<p>Loading PDFs...</p>";
 
             try {
-                const response = await fetch(GITHUB_API);
-                const files = await response.json();
-
-                const pdfFiles = files.filter(file => file.name.endsWith(".pdf"));
+                const pdfFiles = await fetchFilesRecursively(GITHUB_API);
 
                 if (pdfFiles.length === 0) {
                     pdfListContent.innerHTML = "<p>No PDF files found!</p>";
@@ -121,6 +140,23 @@
                 console.error("Error fetching PDFs:", error);
                 pdfListContent.innerHTML = "<p>Error loading PDFs. Please try again later.</p>";
             }
+        }
+
+        // Recursive function to fetch files from subfolders
+        async function fetchFilesRecursively(url) {
+            const files = await fetch(url).then(response => response.json());
+            let pdfFiles = [];
+
+            for (const file of files) {
+                if (file.type === "file" && file.name.endsWith(".pdf")) {
+                    pdfFiles.push(file);
+                } else if (file.type === "dir") {
+                    // If it's a folder, recursively fetch its contents
+                    const subfolderFiles = await fetchFilesRecursively(file.url);
+                    pdfFiles = pdfFiles.concat(subfolderFiles);
+                }
+            }
+            return pdfFiles;
         }
 
         // Fetch practical files from GitHub
