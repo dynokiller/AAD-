@@ -3,50 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAD Practical Showcase</title>
+    <title>Practical Dashboard</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        ul {
-            list-style-type: none;
+            margin: 0;
             padding: 0;
+            background-color: #f4f4f9;
         }
-        li {
-            margin: 10px 0;
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
         }
-        a {
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+        .practical-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            padding: 20px;
+            width: calc(33% - 40px);
+            box-sizing: border-box;
+        }
+        .practical-card h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+        .button {
+            display: block;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
             text-decoration: none;
-            color: #007BFF;
         }
-        a:hover {
-            text-decoration: underline;
+        .button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
-    <h1>AAD Practical Showcase</h1>
-    <ul>
-        <li><a href="Practical 1/Q1.py">Practical 1 Question1</a></li>
-        <li><a href="Practical 1/Q2.py">Practical 1 Question 1</a></li>
-        <li><a href="Practical 2/prac1.py">Practical 2</a></li>
-        <li><a href="Practical 3/prac1.py">Practical 3</a></li>
-        <li><a href="Practical 4/prac.py">Practical 4</a></li>
-        <li><a href="Practical 5/Prac_5.py">Practical 5</a></li>
-        <li><a href="Practical 6/prac.py">Practical 6</a></li>
-        <li><a href="Practical 7/prac7.py">Practical 7</a></li>
-        <li><a href="Practical 8/prac8.py">Practical 8</a></li>
-        <li><a href="Practical 9/prac9.py">Practical 9</a></li>
-        <li><a href="Practical 10/prac10.py">Practical 10</a></li>
-        <li><a href="Practical 11/prac11.py">Practical 11</a></li>
-        <li><a href="Practical 12/prac12.py">Practical 12</a></li>
-    </ul>
+    <div class="header">
+        <h1>Practical Dashboard</h1>
+        <p>Access all your practicals in one place</p>
+    </div>
+    <div class="content" id="practical-list">
+        <!-- Dynamic Practical Cards Will Be Injected Here -->
+    </div>
+    <div id="output" style="display: none;"></div>
+
+    <script>
+        const GITHUB_API = "https://api.github.com/repos/dynokiller/AAD-/contents/";
+
+        async function fetchPracticals() {
+            const listElement = document.getElementById("practical-list");
+            listElement.innerHTML = "<p>Loading practicals...</p>";
+
+            try {
+                const response = await fetch(GITHUB_API);
+                const files = await response.json();
+
+                const practicals = files.filter(file => file.name.startsWith("Practical"));
+
+                listElement.innerHTML = "";
+                practicals.forEach(practical => {
+                    const card = document.createElement("div");
+                    card.className = "practical-card";
+                    card.innerHTML = `
+                        <h3>${practical.name}</h3>
+                        <a class="button" href="#" onclick="viewPractical('${practical.download_url}')">View</a>
+                        <a class="button" href="${practical.download_url}" target="_blank">Download</a>
+                    `;
+                    listElement.appendChild(card);
+                });
+
+                if (practicals.length === 0) {
+                    listElement.innerHTML = "<p>No practicals found!</p>";
+                }
+            } catch (error) {
+                console.error("Error fetching practicals:", error);
+                listElement.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
+            }
+        }
+
+        async function viewPractical(url) {
+            const outputElement = document.getElementById("output");
+            outputElement.style.display = "block";
+            outputElement.innerHTML = "<p>Loading practical content...</p>";
+
+            try {
+                const response = await fetch(url);
+                const content = await response.text();
+
+                outputElement.innerHTML = `
+                    <h2>Practical Content</h2>
+                    <pre style="white-space: pre-wrap; word-wrap: break-word;">${content}</pre>
+                `;
+            } catch (error) {
+                console.error("Error loading practical:", error);
+                outputElement.innerHTML = "<p>Error loading practical content. Please try again later.</p>";
+            }
+        }
+
+        // Fetch and display practicals on page load
+        fetchPracticals();
+    </script>
 </body>
 </html>
-
