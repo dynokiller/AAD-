@@ -72,7 +72,7 @@
     <script>
         const GITHUB_API = "https://api.github.com/repos/dynokiller/AAD-/contents/";
 
-     async function fetchPracticals() {
+    async function fetchPracticals() {
     const listElement = document.getElementById("practical-list");
     listElement.innerHTML = "<p>Loading practicals...</p>";
 
@@ -97,9 +97,9 @@
             const folderResponse = await fetch(folder.url);
             const folderContents = await folderResponse.json();
 
-            // Filter for .py and .html files only
+            // Filter for .py, .html files and exclude .pdf
             const filteredFiles = folderContents.filter(file => 
-                file.name.endsWith(".py") || file.name.endsWith(".html")
+                (file.name.endsWith(".py") || file.name.endsWith(".html"))
             );
 
             if (filteredFiles.length > 0) {
@@ -111,14 +111,13 @@
                     <ul>
                         ${filteredFiles
                             .map(
-                                file => `
+                                file => ` 
                             <li>
                                 ${file.name} 
                                 <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View</a>
                                 <a class="button" href="${file.download_url}" target="_blank">Download</a>
                             </li>
-                        `
-                            )
+                        `)
                             .join("")}
                     </ul>
                 `;
@@ -130,7 +129,6 @@
         listElement.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
     }
 }
-
 
         async function viewPractical(url) {
             const outputElement = document.getElementById("output");
