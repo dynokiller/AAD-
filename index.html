@@ -21,49 +21,42 @@
             display: flex;
             flex-wrap: wrap;
             padding: 20px;
-        }
-        .practical-card, .pdf-card {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin: 10px;
-            padding: 20px;
-            width: calc(33% - 40px);
-            box-sizing: border-box;
-        }
-        .practical-card h3, .pdf-card h3 {
-            margin: 0 0 10px;
-            font-size: 18px;
+            justify-content: center;
         }
         .button {
-            display: block;
-            margin-top: 10px;
-            padding: 10px 15px;
+            padding: 15px 30px;
+            margin: 10px;
             background-color: #007bff;
             color: white;
+            border-radius: 8px;
             text-align: center;
-            border-radius: 5px;
+            font-size: 16px;
             text-decoration: none;
+            cursor: pointer;
         }
         .button:hover {
             background-color: #0056b3;
         }
-        #pdf-list, #practical-list, #main-options {
-            display: none;
+        #output {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .back-button {
             margin: 20px;
-            display: block;
             padding: 10px 15px;
-            background-color: #dc3545;
-            color: white;
+            background-color: #f4f4f9;
+            color: #007bff;
             text-align: center;
             border-radius: 5px;
             text-decoration: none;
+            cursor: pointer;
         }
         .back-button:hover {
-            background-color: #c82333;
+            background-color: #e2e2e2;
         }
     </style>
 </head>
@@ -71,171 +64,124 @@
     <div class="header">
         <h1>Practical Dashboard</h1>
     </div>
-    
-    <div class="content" id="main-options">
+
+    <div class="content" id="main-content">
+        <!-- Main page buttons to navigate to PDFs or Practicals -->
         <button class="button" onclick="showPDFs()">View PDFs</button>
         <button class="button" onclick="showPracticals()">View Practicals</button>
     </div>
 
-    <div class="content" id="pdf-list">
-        <a href="#" class="back-button" onclick="goBack()">Back</a>
-        <h2>PDF Downloads</h2>
-        <ul id="pdf-list-content"></ul>
-    </div>
+    <div class="content" id="pdf-list" style="display: none;"></div>
+    <div class="content" id="practical-list" style="display: none;"></div>
 
-    <div class="content" id="practical-list">
-        <a href="#" class="back-button" onclick="goBack()">Back</a>
-        <h2>Practical Files</h2>
-        <ul id="practical-list-content"></ul>
-    </div>
+    <div id="output" style="display: none;"></div>
 
     <script>
-        const GITHUB_API = "https://api.github.com/repos/dynokiller/AAD-/contents/";
-
-        // Show PDF list
+        // Function to show the PDF section
         function showPDFs() {
-            console.log("Fetching PDFs...");  // Debugging log
-            document.getElementById('main-options').style.display = 'none';
-            document.getElementById('pdf-list').style.display = 'block';
-            document.getElementById('practical-list').style.display = 'none';
+            document.getElementById("main-content").style.display = "none";
+            document.getElementById("practical-list").style.display = "none";
+            document.getElementById("pdf-list").style.display = "block";
+
+            // Clear previous output
+            document.getElementById("pdf-list").innerHTML = "<p>Loading PDFs...</p>";
+
+            // Call the function to load PDFs from GitHub
             fetchPDFs();
         }
 
-        // Show Practical files
+        // Function to show the Practicals section
         function showPracticals() {
-            console.log("Fetching Practicals...");  // Debugging log
-            document.getElementById('main-options').style.display = 'none';
-            document.getElementById('pdf-list').style.display = 'none';
-            document.getElementById('practical-list').style.display = 'block';
+            document.getElementById("main-content").style.display = "none";
+            document.getElementById("pdf-list").style.display = "none";
+            document.getElementById("practical-list").style.display = "block";
+
+            // Clear previous output
+            document.getElementById("practical-list").innerHTML = "<p>Loading Practicals...</p>";
+
+            // Call the function to load Practicals from GitHub
             fetchPracticals();
         }
 
-        // Go back to the main options screen
+        // Function to go back to the main page
         function goBack() {
-            console.log("Going back to main options...");  // Debugging log
-            document.getElementById('main-options').style.display = 'block';
-            document.getElementById('pdf-list').style.display = 'none';
-            document.getElementById('practical-list').style.display = 'none';
+            document.getElementById("pdf-list").style.display = "none";
+            document.getElementById("practical-list").style.display = "none";
+            document.getElementById("main-content").style.display = "block";
         }
 
-        // Fetch PDF files from GitHub with recursive folder traversal
+        // Function to fetch PDFs
         async function fetchPDFs() {
-            const pdfListContent = document.getElementById("pdf-list-content");
-            pdfListContent.innerHTML = "<p>Loading PDFs...</p>";
+            const listElement = document.getElementById("pdf-list");
+            listElement.innerHTML = "<p>Loading PDFs...</p>";
 
             try {
-                const pdfFiles = await fetchFilesRecursively(GITHUB_API);
+                const response = await fetch("https://api.github.com/repos/dynokiller/AAD-/contents/");
+                const files = await response.json();
+                const pdfFolders = files.filter(file => file.type === "dir");
 
-                if (pdfFiles.length === 0) {
-                    pdfListContent.innerHTML = "<p>No PDF files found!</p>";
+                let allPDFs = [];
+                for (const folder of pdfFolders) {
+                    const folderContents = await fetch(folder.url);
+                    const folderJson = await folderContents.json();
+                    const pdfFiles = folderJson.filter(file => file.name.endsWith(".pdf"));
+                    allPDFs = allPDFs.concat(pdfFiles);
+                }
+
+                listElement.innerHTML = "";
+                if (allPDFs.length === 0) {
+                    listElement.innerHTML = "<p>No PDFs found!</p>";
                     return;
                 }
 
-                pdfListContent.innerHTML = "";
-                pdfFiles.forEach(file => {
-                    const listItem = document.createElement("li");
-                    listItem.innerHTML = `
-                        <a class="button" href="${file.download_url}" target="_blank">Download ${file.name}</a>
+                allPDFs.forEach(pdf => {
+                    const pdfCard = document.createElement("div");
+                    pdfCard.className = "practical-card";
+                    pdfCard.innerHTML = `
+                        <h3>${pdf.name}</h3>
+                        <a class="button" href="${pdf.download_url}" target="_blank">Download</a>
                     `;
-                    pdfListContent.appendChild(listItem);
+                    listElement.appendChild(pdfCard);
                 });
             } catch (error) {
                 console.error("Error fetching PDFs:", error);
-                pdfListContent.innerHTML = "<p>Error loading PDFs. Please try again later.</p>";
+                listElement.innerHTML = "<p>Error loading PDFs. Please try again later.</p>";
             }
         }
 
-        // Recursive function to fetch files from subfolders
-        async function fetchFilesRecursively(url) {
-            const files = await fetch(url).then(response => response.json());
-            let pdfFiles = [];
-
-            for (const file of files) {
-                if (file.type === "file" && file.name.endsWith(".pdf")) {
-                    pdfFiles.push(file);
-                } else if (file.type === "dir") {
-                    // If it's a folder, recursively fetch its contents
-                    const subfolderFiles = await fetchFilesRecursively(file.url);
-                    pdfFiles = pdfFiles.concat(subfolderFiles);
-                }
-            }
-            return pdfFiles;
-        }
-
-        // Fetch practical files from GitHub
+        // Function to fetch Practicals
         async function fetchPracticals() {
-            const practicalListContent = document.getElementById("practical-list-content");
-            practicalListContent.innerHTML = "<p>Loading practicals...</p>";
+            const listElement = document.getElementById("practical-list");
+            listElement.innerHTML = "<p>Loading Practicals...</p>";
 
             try {
-                const response = await fetch(GITHUB_API);
+                const response = await fetch("https://api.github.com/repos/dynokiller/AAD-/contents/");
                 const files = await response.json();
-
                 const practicalFolders = files.filter(file => file.type === "dir" && file.name.startsWith("Practical"));
 
+                listElement.innerHTML = "";
                 if (practicalFolders.length === 0) {
-                    practicalListContent.innerHTML = "<p>No practical folders found!</p>";
+                    listElement.innerHTML = "<p>No practicals found!</p>";
                     return;
                 }
 
-                practicalListContent.innerHTML = "";
-                for (const folder of practicalFolders) {
-                    const folderResponse = await fetch(folder.url);
-                    const folderContents = await folderResponse.json();
-
-                    // Filter for .py and .html files
-                    const practicalFiles = folderContents.filter(file =>
-                        file.name.endsWith(".py") || file.name.endsWith(".html")
-                    );
-
-                    if (practicalFiles.length > 0) {
-                        const card = document.createElement("div");
-                        card.className = "practical-card";
-                        card.innerHTML = `
-                            <h3>${folder.name}</h3>
-                            <ul>
-                                ${practicalFiles.map(file => `
-                                    <li>
-                                        ${file.name}
-                                        <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View/Run</a>
-                                        <a class="button" href="${file.download_url}" target="_blank">Download</a>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        `;
-                        practicalListContent.appendChild(card);
-                    }
-                }
+                practicalFolders.forEach(folder => {
+                    const folderCard = document.createElement("div");
+                    folderCard.className = "practical-card";
+                    folderCard.innerHTML = `
+                        <h3>${folder.name}</h3>
+                        <a class="button" href="${folder.html_url}" target="_blank">View Practical</a>
+                    `;
+                    listElement.appendChild(folderCard);
+                });
             } catch (error) {
-                console.error("Error fetching practicals:", error);
-                practicalListContent.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
+                console.error("Error fetching Practicals:", error);
+                listElement.innerHTML = "<p>Error loading Practicals. Please try again later.</p>";
             }
         }
 
-        // View practical content
-        async function viewPractical(url) {
-            const outputElement = document.createElement("div");
-            outputElement.style.padding = "20px";
-            outputElement.style.margin = "20px";
-            outputElement.style.border = "1px solid #ccc";
-            outputElement.style.borderRadius = "8px";
-            outputElement.style.backgroundColor = "#fff";
-            outputElement.innerHTML = "<p>Loading practical content...</p>";
-
-            document.body.appendChild(outputElement);
-
-            try {
-                const response = await fetch(url);
-                const content = await response.text();
-                outputElement.innerHTML = `
-                    <h2>Practical Content</h2>
-                    <pre style="white-space: pre-wrap; word-wrap: break-word;">${content}</pre>
-                `;
-            } catch (error) {
-                console.error("Error loading practical:", error);
-                outputElement.innerHTML = "<p>Error loading practical content. Please try again later.</p>";
-            }
-        }
-
-        // Initially show the main options
-        document.getElementById('main-options').style.display
+        // Initialize the page and display the main buttons
+        document.getElementById("main-content").style.display = "block";
+    </script>
+</body>
+</html>
