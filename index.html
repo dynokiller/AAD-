@@ -22,7 +22,7 @@
             flex-wrap: wrap;
             padding: 20px;
         }
-        .practical-card {
+        .practical-card, .pdf-card {
             border: 1px solid #ccc;
             border-radius: 8px;
             background-color: white;
@@ -32,7 +32,7 @@
             width: calc(33% - 40px);
             box-sizing: border-box;
         }
-        .practical-card h3 {
+        .practical-card h3, .pdf-card h3 {
             margin: 0 0 10px;
             font-size: 18px;
         }
@@ -49,21 +49,8 @@
         .button:hover {
             background-color: #0056b3;
         }
-        #output {
-            margin: 20px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        #pdf-list {
+        #pdf-list, #practical-list {
             display: none;
-            margin: 20px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: white;
         }
     </style>
 </head>
@@ -71,93 +58,136 @@
     <div class="header">
         <h1>Practical Dashboard</h1>
     </div>
-    <div class="content" id="practical-list">
-        <!-- Dynamic Practical Cards Will Be Injected Here -->
+    
+    <div class="content" id="main-options">
+        <button class="button" onclick="showPDFs()">View PDFs</button>
+        <button class="button" onclick="showPracticals()">View Practicals</button>
     </div>
-    <div id="pdf-list">
+
+    <div class="content" id="pdf-list">
         <h2>PDF Downloads</h2>
-        <ul id="pdf-list-content">
-            <!-- PDF links will be dynamically injected here -->
-        </ul>
+        <ul id="pdf-list-content"></ul>
     </div>
-    <div id="output" style="display: none;"></div>
+
+    <div class="content" id="practical-list">
+        <h2>Practical Files</h2>
+        <ul id="practical-list-content"></ul>
+    </div>
 
     <script>
         const GITHUB_API = "https://api.github.com/repos/dynokiller/AAD-/contents/";
 
-        async function fetchPracticals() {
-            const listElement = document.getElementById("practical-list");
-            listElement.innerHTML = "<p>Loading practicals...</p>";
+        // Show PDF list
+        function showPDFs() {
+            document.getElementById('main-options').style.display = 'none';
+            document.getElementById('pdf-list').style.display = 'block';
+            document.getElementById('practical-list').style.display = 'none';
+            fetchPDFs();
+        }
+
+        // Show Practical files
+        function showPracticals() {
+            document.getElementById('main-options').style.display = 'none';
+            document.getElementById('pdf-list').style.display = 'none';
+            document.getElementById('practical-list').style.display = 'block';
+            fetchPracticals();
+        }
+
+        // Fetch PDF files from GitHub
+        async function fetchPDFs() {
+            const pdfListContent = document.getElementById("pdf-list-content");
+            pdfListContent.innerHTML = "<p>Loading PDFs...</p>";
 
             try {
-                // Fetch the root directory to get all practical folders
-                const response = await fetch("https://api.github.com/repos/dynokiller/AAD-/contents/");
+                const response = await fetch(GITHUB_API);
                 const files = await response.json();
 
-                console.log("GitHub API Root Response:", files); // Debugging
+                const pdfFiles = files.filter(file => file.name.endsWith(".pdf"));
 
-                // Filter for directories (each practical folder)
-                const practicalFolders = files.filter(file => file.type === "dir" && file.name.startsWith("Practical"));
-
-                listElement.innerHTML = "";
-                if (practicalFolders.length === 0) {
-                    listElement.innerHTML = "<p>No practical folders found!</p>";
+                if (pdfFiles.length === 0) {
+                    pdfListContent.innerHTML = "<p>No PDF files found!</p>";
                     return;
                 }
 
+                pdfListContent.innerHTML = "";
+                pdfFiles.forEach(file => {
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = `
+                        <a class="button" href="${file.download_url}" target="_blank">Download ${file.name}</a>
+                    `;
+                    pdfListContent.appendChild(listItem);
+                });
+            } catch (error) {
+                console.error("Error fetching PDFs:", error);
+                pdfListContent.innerHTML = "<p>Error loading PDFs. Please try again later.</p>";
+            }
+        }
+
+        // Fetch practical files from GitHub
+        async function fetchPracticals() {
+            const practicalListContent = document.getElementById("practical-list-content");
+            practicalListContent.innerHTML = "<p>Loading practicals...</p>";
+
+            try {
+                const response = await fetch(GITHUB_API);
+                const files = await response.json();
+
+                const practicalFolders = files.filter(file => file.type === "dir" && file.name.startsWith("Practical"));
+
+                if (practicalFolders.length === 0) {
+                    practicalListContent.innerHTML = "<p>No practical folders found!</p>";
+                    return;
+                }
+
+                practicalListContent.innerHTML = "";
                 for (const folder of practicalFolders) {
-                    // Fetch contents of each folder
                     const folderResponse = await fetch(folder.url);
                     const folderContents = await folderResponse.json();
 
-                    // Filter for .py, .html files, and exclude .pdf for view options
-                    const filteredFiles = folderContents.filter(file => 
-                        (file.name.endsWith(".py") || file.name.endsWith(".html"))
+                    // Filter for .py and .html files
+                    const practicalFiles = folderContents.filter(file =>
+                        file.name.endsWith(".py") || file.name.endsWith(".html")
                     );
 
-                    const pdfFiles = folderContents.filter(file => file.name.endsWith(".pdf"));
-
-                    if (filteredFiles.length > 0 || pdfFiles.length > 0) {
-                        // Create a card for the folder
+                    if (practicalFiles.length > 0) {
                         const card = document.createElement("div");
                         card.className = "practical-card";
                         card.innerHTML = `
                             <h3>${folder.name}</h3>
                             <ul>
-                                ${filteredFiles
-                                    .map(
-                                        file => ` 
-                                            <li>
-                                                ${file.name} 
-                                                <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View</a>
-                                                <a class="button" href="${file.download_url}" target="_blank">Download</a>
-                                            </li>
-                                        `
-                                    )
-                                    .join("")}
-                                ${pdfFiles.length > 0 ? `
-                                    <li><a class="button" href="#" onclick="showPDFList(${JSON.stringify(pdfFiles)})">View PDFs</a></li>
-                                ` : ""}
+                                ${practicalFiles.map(file => `
+                                    <li>
+                                        ${file.name}
+                                        <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View/Run</a>
+                                        <a class="button" href="${file.download_url}" target="_blank">Download</a>
+                                    </li>
+                                `).join('')}
                             </ul>
                         `;
-                        listElement.appendChild(card);
+                        practicalListContent.appendChild(card);
                     }
                 }
             } catch (error) {
                 console.error("Error fetching practicals:", error);
-                listElement.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
+                practicalListContent.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
             }
         }
 
+        // View practical content
         async function viewPractical(url) {
-            const outputElement = document.getElementById("output");
-            outputElement.style.display = "block";
+            const outputElement = document.createElement("div");
+            outputElement.style.padding = "20px";
+            outputElement.style.margin = "20px";
+            outputElement.style.border = "1px solid #ccc";
+            outputElement.style.borderRadius = "8px";
+            outputElement.style.backgroundColor = "#fff";
             outputElement.innerHTML = "<p>Loading practical content...</p>";
+
+            document.body.appendChild(outputElement);
 
             try {
                 const response = await fetch(url);
                 const content = await response.text();
-
                 outputElement.innerHTML = `
                     <h2>Practical Content</h2>
                     <pre style="white-space: pre-wrap; word-wrap: break-word;">${content}</pre>
@@ -167,24 +197,6 @@
                 outputElement.innerHTML = "<p>Error loading practical content. Please try again later.</p>";
             }
         }
-
-        function showPDFList(pdfFiles) {
-            const pdfListContainer = document.getElementById("pdf-list");
-            const pdfListContent = document.getElementById("pdf-list-content");
-            pdfListContainer.style.display = "block";
-            pdfListContent.innerHTML = ""; // Clear existing content
-
-            pdfFiles.forEach(file => {
-                const listItem = document.createElement("li");
-                listItem.innerHTML = `
-                    <a class="button" href="${file.download_url}" target="_blank">${file.name}</a>
-                `;
-                pdfListContent.appendChild(listItem);
-            });
-        }
-
-        // Fetch and display practicals on page load
-        fetchPracticals();
     </script>
 </body>
 </html>
