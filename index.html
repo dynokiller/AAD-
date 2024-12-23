@@ -94,6 +94,7 @@
 
         // Show PDF list
         function showPDFs() {
+            console.log("Fetching PDFs...");  // Debugging log
             document.getElementById('main-options').style.display = 'none';
             document.getElementById('pdf-list').style.display = 'block';
             document.getElementById('practical-list').style.display = 'none';
@@ -102,6 +103,7 @@
 
         // Show Practical files
         function showPracticals() {
+            console.log("Fetching Practicals...");  // Debugging log
             document.getElementById('main-options').style.display = 'none';
             document.getElementById('pdf-list').style.display = 'none';
             document.getElementById('practical-list').style.display = 'block';
@@ -110,6 +112,7 @@
 
         // Go back to the main options screen
         function goBack() {
+            console.log("Going back to main options...");  // Debugging log
             document.getElementById('main-options').style.display = 'block';
             document.getElementById('pdf-list').style.display = 'none';
             document.getElementById('practical-list').style.display = 'none';
@@ -233,6 +236,6 @@
                 outputElement.innerHTML = "<p>Error loading practical content. Please try again later.</p>";
             }
         }
-    </script>
-</body>
-</html>
+
+        // Initially show the main options
+        document.getElementById('main-options').style.display
