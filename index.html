@@ -52,42 +52,6 @@
         #pdf-list, #practical-list {
             display: none;
         }
-        .practical-card ul {
-            display: flex;
-            flex-wrap: wrap;
-            list-style: none;
-            padding: 0;
-        }
-        .practical-card ul li {
-            flex: 1 1 45%;
-            margin: 10px;
-            box-sizing: border-box;
-        }
-        .practical-card ul li a {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
-            text-align: center;
-            border-radius: 5px;
-            text-decoration: none;
-        }
-        .practical-card ul li a:hover {
-            background-color: #0056b3;
-        }
-        .content-wrapper {
-            display: flex;
-            justify-content: space-between;
-        }
-        .content-wrapper pre {
-            width: 45%;
-            background-color: #f4f4f9;
-            padding: 10px;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
     </style>
 </head>
 <body>
@@ -160,61 +124,54 @@
         }
 
         // Fetch practical files from GitHub
-        // Fetch practical files from GitHub
-async function fetchPracticals() {
-    const practicalListContent = document.getElementById("practical-list-content");
-    practicalListContent.innerHTML = "<p>Loading practicals...</p>";
+        async function fetchPracticals() {
+            const practicalListContent = document.getElementById("practical-list-content");
+            practicalListContent.innerHTML = "<p>Loading practicals...</p>";
 
-    try {
-        const response = await fetch(GITHUB_API);
-        const files = await response.json();
+            try {
+                const response = await fetch(GITHUB_API);
+                const files = await response.json();
 
-        // Check if the response contains practical folders
-        console.log("Fetched files:", files);  // Log the fetched files for debugging
+                const practicalFolders = files.filter(file => file.type === "dir" && file.name.startsWith("Practical"));
 
-        const practicalFolders = files.filter(file => file.type === "dir" && file.name.startsWith("Practical"));
+                if (practicalFolders.length === 0) {
+                    practicalListContent.innerHTML = "<p>No practical folders found!</p>";
+                    return;
+                }
 
-        if (practicalFolders.length === 0) {
-            practicalListContent.innerHTML = "<p>No practical folders found!</p>";
-            return;
-        }
+                practicalListContent.innerHTML = "";
+                for (const folder of practicalFolders) {
+                    const folderResponse = await fetch(folder.url);
+                    const folderContents = await folderResponse.json();
 
-        practicalListContent.innerHTML = "";
-        for (const folder of practicalFolders) {
-            const folderResponse = await fetch(folder.url);
-            const folderContents = await folderResponse.json();
+                    // Filter for .py and .html files
+                    const practicalFiles = folderContents.filter(file =>
+                        file.name.endsWith(".py") || file.name.endsWith(".html")
+                    );
 
-            // Log the contents of each folder for debugging
-            console.log(`Contents of folder ${folder.name}:`, folderContents);
-
-            // Filter for .py and .html files
-            const practicalFiles = folderContents.filter(file =>
-                file.name.endsWith(".py") || file.name.endsWith(".html")
-            );
-
-            if (practicalFiles.length > 0) {
-                const card = document.createElement("div");
-                card.className = "practical-card";
-                card.innerHTML = `
-                    <h3>${folder.name}</h3>
-                    <ul>
-                        ${practicalFiles.map(file => `
-                            <li>
-                                ${file.name}
-                                <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View/Run</a>
-                                <a class="button" href="${file.download_url}" target="_blank">Download</a>
-                            </li>
-                        `).join('')}
-                    </ul>
-                `;
-                practicalListContent.appendChild(card);
+                    if (practicalFiles.length > 0) {
+                        const card = document.createElement("div");
+                        card.className = "practical-card";
+                        card.innerHTML = `
+                            <h3>${folder.name}</h3>
+                            <ul>
+                                ${practicalFiles.map(file => `
+                                    <li>
+                                        ${file.name}
+                                        <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View/Run</a>
+                                        <a class="button" href="${file.download_url}" target="_blank">Download</a>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        `;
+                        practicalListContent.appendChild(card);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching practicals:", error);
+                practicalListContent.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
             }
         }
-    } catch (error) {
-        console.error("Error fetching practicals:", error);
-        practicalListContent.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
-    }
-}
 
         // View practical content
         async function viewPractical(url) {
@@ -232,12 +189,8 @@ async function fetchPracticals() {
                 const response = await fetch(url);
                 const content = await response.text();
                 outputElement.innerHTML = `
-                    <div class="content-wrapper">
-                        <pre>${content}</pre>
-                        <div>
-                            <a class="button" href="${url}" target="_blank">Download</a>
-                        </div>
-                    </div>
+                    <h2>Practical Content</h2>
+                    <pre style="white-space: pre-wrap; word-wrap: break-word;">${content}</pre>
                 `;
             } catch (error) {
                 console.error("Error loading practical:", error);
