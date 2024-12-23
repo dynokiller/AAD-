@@ -160,54 +160,61 @@
         }
 
         // Fetch practical files from GitHub
-        async function fetchPracticals() {
-            const practicalListContent = document.getElementById("practical-list-content");
-            practicalListContent.innerHTML = "<p>Loading practicals...</p>";
+        // Fetch practical files from GitHub
+async function fetchPracticals() {
+    const practicalListContent = document.getElementById("practical-list-content");
+    practicalListContent.innerHTML = "<p>Loading practicals...</p>";
 
-            try {
-                const response = await fetch(GITHUB_API);
-                const files = await response.json();
+    try {
+        const response = await fetch(GITHUB_API);
+        const files = await response.json();
 
-                const practicalFolders = files.filter(file => file.type === "dir" && file.name.startsWith("Practical"));
+        // Check if the response contains practical folders
+        console.log("Fetched files:", files);  // Log the fetched files for debugging
 
-                if (practicalFolders.length === 0) {
-                    practicalListContent.innerHTML = "<p>No practical folders found!</p>";
-                    return;
-                }
+        const practicalFolders = files.filter(file => file.type === "dir" && file.name.startsWith("Practical"));
 
-                practicalListContent.innerHTML = "";
-                for (const folder of practicalFolders) {
-                    const folderResponse = await fetch(folder.url);
-                    const folderContents = await folderResponse.json();
+        if (practicalFolders.length === 0) {
+            practicalListContent.innerHTML = "<p>No practical folders found!</p>";
+            return;
+        }
 
-                    // Filter for .py and .html files
-                    const practicalFiles = folderContents.filter(file =>
-                        file.name.endsWith(".py") || file.name.endsWith(".html")
-                    );
+        practicalListContent.innerHTML = "";
+        for (const folder of practicalFolders) {
+            const folderResponse = await fetch(folder.url);
+            const folderContents = await folderResponse.json();
 
-                    if (practicalFiles.length > 0) {
-                        const card = document.createElement("div");
-                        card.className = "practical-card";
-                        card.innerHTML = `
-                            <h3>${folder.name}</h3>
-                            <ul>
-                                ${practicalFiles.map(file => `
-                                    <li>
-                                        ${file.name}
-                                        <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View/Run</a>
-                                        <a class="button" href="${file.download_url}" target="_blank">Download</a>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        `;
-                        practicalListContent.appendChild(card);
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching practicals:", error);
-                practicalListContent.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
+            // Log the contents of each folder for debugging
+            console.log(`Contents of folder ${folder.name}:`, folderContents);
+
+            // Filter for .py and .html files
+            const practicalFiles = folderContents.filter(file =>
+                file.name.endsWith(".py") || file.name.endsWith(".html")
+            );
+
+            if (practicalFiles.length > 0) {
+                const card = document.createElement("div");
+                card.className = "practical-card";
+                card.innerHTML = `
+                    <h3>${folder.name}</h3>
+                    <ul>
+                        ${practicalFiles.map(file => `
+                            <li>
+                                ${file.name}
+                                <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View/Run</a>
+                                <a class="button" href="${file.download_url}" target="_blank">Download</a>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                practicalListContent.appendChild(card);
             }
         }
+    } catch (error) {
+        console.error("Error fetching practicals:", error);
+        practicalListContent.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
+    }
+}
 
         // View practical content
         async function viewPractical(url) {
