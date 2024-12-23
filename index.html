@@ -72,36 +72,58 @@
     <script>
         const GITHUB_API = "https://api.github.com/repos/dynokiller/AAD-/contents/";
 
-        async function fetchPracticals() {
-            const listElement = document.getElementById("practical-list");
-            listElement.innerHTML = "<p>Loading practicals...</p>";
+       async function fetchPracticals() {
+    const listElement = document.getElementById("practical-list");
+    listElement.innerHTML = "<p>Loading practicals...</p>";
 
-            try {
-                const response = await fetch(GITHUB_API);
-                const files = await response.json();
+    try {
+        // Fetch the root directory to get all practical folders
+        const response = await fetch("https://api.github.com/repos/dynokiller/AAD-/contents/");
+        const files = await response.json();
 
-                const practicals = files.filter(file => file.name.startsWith("Practical"));
+        console.log("GitHub API Root Response:", files); // Debugging
 
-                listElement.innerHTML = "";
-                practicals.forEach(practical => {
-                    const card = document.createElement("div");
-                    card.className = "practical-card";
-                    card.innerHTML = `
-                        <h3>${practical.name}</h3>
-                        <a class="button" href="#" onclick="viewPractical('${practical.download_url}')">View</a>
-                        <a class="button" href="${practical.download_url}" target="_blank">Download</a>
-                    `;
-                    listElement.appendChild(card);
-                });
+        // Filter for directories (each practical folder)
+        const practicalFolders = files.filter(file => file.type === "dir" && file.name.startsWith("Practical"));
 
-                if (practicals.length === 0) {
-                    listElement.innerHTML = "<p>No practicals found!</p>";
-                }
-            } catch (error) {
-                console.error("Error fetching practicals:", error);
-                listElement.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
-            }
+        listElement.innerHTML = "";
+        if (practicalFolders.length === 0) {
+            listElement.innerHTML = "<p>No practical folders found!</p>";
+            return;
         }
+
+        for (const folder of practicalFolders) {
+            // Fetch contents of each folder
+            const folderResponse = await fetch(folder.url);
+            const folderContents = await folderResponse.json();
+
+            // Create a card for the folder
+            const card = document.createElement("div");
+            card.className = "practical-card";
+            card.innerHTML = `
+                <h3>${folder.name}</h3>
+                <ul>
+                    ${folderContents
+                        .map(
+                            file => `
+                        <li>
+                            ${file.name} 
+                            <a class="button" href="#" onclick="viewPractical('${file.download_url}')">View</a>
+                            <a class="button" href="${file.download_url}" target="_blank">Download</a>
+                        </li>
+                    `
+                        )
+                        .join("")}
+                </ul>
+            `;
+            listElement.appendChild(card);
+        }
+    } catch (error) {
+        console.error("Error fetching practicals:", error);
+        listElement.innerHTML = "<p>Error loading practicals. Please try again later.</p>";
+    }
+}
+
 
         async function viewPractical(url) {
             const outputElement = document.getElementById("output");
